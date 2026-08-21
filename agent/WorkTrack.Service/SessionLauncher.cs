@@ -1,5 +1,6 @@
 namespace WorkTrack.Service;
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using WorkTrack.Core.Config;
 
@@ -82,6 +83,23 @@ public class SessionLauncher
         // SessionAgent.exe berada di direktori yang sama dengan Service.exe
         var baseDir = AppContext.BaseDirectory;
         _agentExePath = Path.Combine(baseDir, "WorkTrack.SessionAgent.exe");
+    }
+
+    /// <summary>
+    /// Cek apakah proses SessionAgent sedang berjalan. Dipakai ServiceWorker untuk
+    /// relaunch otomatis bila SessionAgent belum/tidak jalan (misal: service start
+    /// sebelum ada sesi user login saat boot, atau SessionAgent crash).
+    /// </summary>
+    public bool IsSessionAgentRunning()
+    {
+        try
+        {
+            return Process.GetProcessesByName("WorkTrack.SessionAgent").Length > 0;
+        }
+        catch
+        {
+            return true; // gagal cek → asumsikan jalan, supaya tidak spam-launch
+        }
     }
 
     /// <summary>

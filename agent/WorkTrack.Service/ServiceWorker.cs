@@ -74,6 +74,14 @@ public class ServiceWorker : BackgroundService
                 _logger.LogWarning(ex, "Heartbeat failed — will retry in {Interval}s", (int)HeartbeatInterval.TotalSeconds);
             }
 
+            // Self-healing: relaunch SessionAgent bila belum/tidak jalan — misal service
+            // start sebelum ada sesi user login saat boot, atau SessionAgent crash.
+            if (!_sessionLauncher.IsSessionAgentRunning())
+            {
+                _logger.LogWarning("SessionAgent tidak terdeteksi jalan — mencoba meluncurkan ulang.");
+                _sessionLauncher.LaunchInUserSession();
+            }
+
             try { await Task.Delay(HeartbeatInterval, stoppingToken); }
             catch (OperationCanceledException) { break; }
         }

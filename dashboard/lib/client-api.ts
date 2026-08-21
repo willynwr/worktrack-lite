@@ -1,6 +1,6 @@
 'use client';
 
-import type { TimelineResponse } from '@/lib/api';
+import type { TimelineResponse, Device } from '@/lib/api';
 
 // Dipanggil dari Client Component — lewat proxy route lokal (app/api/timeline/[id])
 // karena browser tidak bisa membaca httpOnly cookie admin_token untuk disisipkan
@@ -10,3 +10,15 @@ export async function fetchTimeline(deviceId: string, date: string): Promise<Tim
   if (!res.ok) throw new Error(`Timeline fetch failed: ${res.status}`);
   return res.json();
 }
+
+// Fetcher generik untuk SWR — dipakai polling status device (online/offline,
+// app aktif) supaya dashboard ter-update berkala tanpa reload manual.
+export async function swrFetcher<T>(path: string): Promise<T> {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export const DEVICES_POLL_INTERVAL_MS = 5000;
+
+export type { Device };
