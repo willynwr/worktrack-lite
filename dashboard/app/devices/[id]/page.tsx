@@ -1,7 +1,8 @@
 import { api } from '@/lib/server-api';
-import { formatDateTime, formatDuration, screenshotUrl } from '@/lib/api';
-import type { Device, DailyStats } from '@/lib/api';
+import { formatDuration } from '@/lib/api';
+import type { DailyStats } from '@/lib/api';
 import TimelineClient from './TimelineClient';
+import DeviceLiveCard from '../../_components/DeviceLiveCard';
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -15,15 +16,6 @@ async function getData(id: string) {
     device: device.status === 'fulfilled' ? device.value : null,
     stats:  stats.status  === 'fulfilled' ? stats.value  : null,
   };
-}
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="meta-item">
-      <span className="meta-key">{label}</span>
-      <span className="meta-val">{value ?? '—'}</span>
-    </div>
-  );
 }
 
 function StatsPanel({ stats }: { stats: DailyStats }) {
@@ -89,53 +81,11 @@ export default async function DeviceDetailPage({ params }: Props) {
     );
   }
 
-  const isOnline = device.isOnline && device.isActive;
-
   return (
     <>
       <a href="/devices" className="back-link">← Semua Devices</a>
 
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 className="page-title">{device.hostname}</h1>
-          <p className="page-sub">{device.deviceId}</p>
-        </div>
-        <span className={`pill ${isOnline ? 'pill-online' : 'pill-offline'}`} style={{ fontSize: 13 }}>
-          <span className="pill-dot" />
-          {isOnline ? 'Online' : device.isActive ? 'Offline' : 'Disabled'}
-        </span>
-      </div>
-
-      {/* Device info */}
-      <div className="card section">
-        <div className="card-title">Informasi Device</div>
-        <div className="meta-grid">
-          <InfoRow label="IP Address"     value={<code style={{ fontFamily: 'monospace', color: 'var(--accent)' }}>{device.localIp}</code>} />
-          <InfoRow label="Windows"        value={device.windowsVersion} />
-          <InfoRow label="Agent"          value={device.agentVersion} />
-          <InfoRow label="App Aktif"      value={device.lastActiveApp ? <span className="app-badge">{device.lastActiveApp}</span> : null} />
-          <InfoRow label="Idle"           value={device.lastIdleSeconds != null ? formatDuration(device.lastIdleSeconds) : null} />
-          <InfoRow label="Uptime"         value={device.lastUptimeSeconds != null ? formatDuration(device.lastUptimeSeconds) : null} />
-          <InfoRow label="Last Seen"      value={device.lastSeenAt ? formatDateTime(device.lastSeenAt) : null} />
-          <InfoRow label="Terdaftar"      value={formatDateTime(device.registeredAt)} />
-        </div>
-      </div>
-
-      {/* Last screenshot */}
-      {device.lastScreenshot && (
-        <div className="card section">
-          <div className="card-title">Screenshot Terakhir</div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={screenshotUrl(device.lastScreenshot.id)}
-            alt="last screenshot"
-            style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid var(--border2)' }}
-          />
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-            {formatDateTime(device.lastScreenshot.timestamp)}
-          </div>
-        </div>
-      )}
+      <DeviceLiveCard deviceId={id} initialDevice={device} />
 
       {/* Stats */}
       {stats && <div className="section"><StatsPanel stats={stats} /></div>}
