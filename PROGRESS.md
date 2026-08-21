@@ -33,9 +33,10 @@ Berikut adalah ringkasan status implementasi berdasarkan dokumen arsitektur `Wor
 ### Phase 5: Web Dashboard
 - [x] Scaffold Next.js + TypeScript.
 - [x] Endpoint khusus dashboard (`GET /dashboard/devices`, `GET /timeline`, `GET /stats`, `PATCH`).
-- [x] Halaman `Overview` (Status real-time).
-- [x] Halaman `Devices` (Daftar semua PC).
-- [x] Halaman `Device Detail` (Info, statistik harian, timeline interaktif).
+- [x] Halaman `Overview` (Status real-time, auto-refresh tiap 5 detik via SWR).
+- [x] Halaman `Devices` (Daftar semua PC, auto-refresh tiap 5 detik).
+- [x] Halaman `Device Detail` (Info, statistik harian, auto-refresh tiap 60 detik untuk status/app aktif/screenshot terakhir).
+- [x] ~~Timeline interaktif~~ **dihapus** — screenshot sekarang cuma disimpan 1 (terbaru) per device (lihat catatan storage di bawah), jadi riwayat per-menit tidak ada lagi untuk ditampilkan.
 
 ### Phase 6: Hardening (Sebagian)
 - [x] Rate Limiting (Register: 5/min, Login: 10/min).
@@ -75,6 +76,13 @@ Berikut adalah ringkasan status implementasi berdasarkan dokumen arsitektur `Wor
 - [x] Migration terakhir (`AddAdminAndAuditLog`) diterapkan ke MySQL lokal (`dotnet ef database update`) — semua tabel (`Devices`, `ActivityReports`, `Screenshots`, `AdminUsers`, `AuditLogs`) berhasil dibuat.
 - [x] Test end-to-end server (tanpa Windows agent, karena environment dev ini macOS): seed admin → login → dapat JWT → register device (`POST /devices/register`) → `GET /dashboard/devices` → `PATCH /dashboard/devices/{id}` disable/enable → verifikasi audit log tercatat di tabel `AuditLogs` → verifikasi device nonaktif ditolak (401) saat heartbeat. Semua alur berjalan benar.
 - [x] **Bug kritis ditemukan & diperbaiki**: `JwtService.ValidateToken` (`Auth/JwtService.cs`) selalu mengembalikan `null` untuk token admin yang valid, karena `JwtSecurityTokenHandler` secara default me-remap claim `sub` → URI claim lama (`.../nameidentifier`) saat validasi, sehingga `FindFirstValue(JwtRegisteredClaimNames.Sub)` tidak pernah menemukan claim tersebut. Akibatnya **seluruh dashboard admin gagal login/otentikasi sejak awal**, meski proses generate token benar. Fix: set `MapInboundClaims = false` pada `JwtSecurityTokenHandler` sebelum `ValidateToken`. Sudah diverifikasi ulang end-to-end setelah fix — login & seluruh endpoint dashboard kini berfungsi.
-- [ ] Test end-to-end dengan agent Windows sungguhan (Service + SessionAgent di PC nyata, termasuk offline-sync via SQLite queue) belum dilakukan — memerlukan mesin Windows, tidak tersedia di environment dev ini.
+- [x] Test end-to-end dengan agent Windows sungguhan (PC-002) berhasil: registrasi via `machine_key`, heartbeat, activity report (foreground app + idle), dan upload screenshot semua terverifikasi masuk ke server &amp; tampil di dashboard.
+- [ ] Offline-sync (SQLite queue) dengan agent Windows sungguhan belum dites eksplisit (memutus network lalu menyambung lagi) — logic-nya sudah ada (`LocalQueue.cs`), tapi belum diverifikasi langsung.
 
 > Catatan lingkungan: verifikasi di atas dijalankan dengan MySQL lokal (Homebrew) sebagai pengganti server MySQL production untuk keperluan testing.
+
+### Phase 5/6: Perbaikan lanjutan setelah testing end-to-end
+- [x] **Bug ditemukan & diperbaiki**: dashboard Overview/Devices/Device Detail tidak auto-refresh — status online/offline & app aktif nyangkut stale sampai reload manual, karena Server Component cuma fetch sekali saat page load. Fix: polling via SWR — Overview/Devices tiap 5 detik (`app/_components/OverviewClient.tsx`, `DevicesClient.tsx`, proxy `app/api/devices/route.ts`), Device Detail tiap 60 detik selaras siklus report agent (`DeviceLiveCard.tsx`, proxy `app/api/devices/[id]/route.ts`).
+- [x] **Bug reliability ditemukan & diperbaiki**: `SessionLauncher.LaunchInUserSession()` di `ServiceWorker.cs` cuma dipanggil sekali saat service start — kalau service di-set auto-start saat boot (start sebelum ada sesi user login), SessionAgent gagal diluncurkan dan **tidak pernah dicoba lagi** selama service hidup. Fix: `ServiceWorker` sekarang cek tiap siklus heartbeat (`SessionLauncher.IsSessionAgentRunning()`) dan relaunch otomatis bila SessionAgent belum/tidak jalan (self-healing).
+- [x] **Perubahan retensi screenshot** (permintaan user): storage sebelumnya menyimpan semua screenshot sampai retention job 30 hari jalan → menumpuk cepat. Sekarang tiap upload baru langsung menghapus screenshot lama untuk device+monitor yang sama (DB row + file), jadi cuma 1 screenshot terbaru per device yang tersimpan (`ScreenshotEndpoints.UploadScreenshot`). Konsekuensi: fitur **Timeline** (riwayat screenshot per menit) jadi tidak berguna dan **dihapus** dari dashboard beserta proxy route & kode client-nya (endpoint `GET /dashboard/devices/{id}/timeline` di server tetap ada, tidak dipakai dashboard lagi).
+- [x] Repo di-push ke GitHub: https://github.com/willynwr/worktrack-lite (public) — dipakai untuk `git clone` di PC Windows saat testing agent.
