@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/agent/">
+    <Project Path="agent/WorkTrack.Core/WorkTrack.Core.csproj" />
+    <Project Path="agent/WorkTrack.Service/WorkTrack.Service.csproj" />
+    <Project Path="agent/WorkTrack.SessionAgent/WorkTrack.SessionAgent.csproj" />
+  </Folder>
+  <Folder Name="/server/">
+    <Project Path="server/WorkTrack.Api/WorkTrack.Api.csproj" />
+  </Folder>
+</Solution>

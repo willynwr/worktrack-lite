@@ -1,0 +1,24 @@
+# ── .NET ──────────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+
+# ── Node / Next.js ────────────────────────────────────────────────────────
+node_modules/
+.next/
+dashboard/.env.local
+dashboard/.env*.local
+
+# ── Runtime data (jangan ikut commit) ────────────────────────────────────
+server/WorkTrack.Api/screenshots/*
+!server/WorkTrack.Api/screenshots/.gitkeep
+*.db
+*.dat
+
+# ── Installer build output ───────────────────────────────────────────────
+installer/publish/
+installer/output/
+
+# ── OS / editor ───────────────────────────────────────────────────────────
+.DS_Store
+*.log

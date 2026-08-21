@@ -1,0 +1,51 @@
+@WorkTrack.Api_HostAddress = http://localhost:5031
+@DeviceToken = wt_live_REPLACE_WITH_REAL_TOKEN
+
+### [1] Register device baru
+POST {{WorkTrack.Api_HostAddress}}/api/v1/devices/register
+Content-Type: application/json
+
+{
+  "machineKey": "test-machine-abc123",
+  "hostname": "TEST-PC",
+  "windowsVersion": "Windows 11",
+  "agentVersion": "1.0.0",
+  "localIp": "192.168.1.100"
+}
+
+###
+
+### [2] Heartbeat (gunakan token dari response register)
+POST {{WorkTrack.Api_HostAddress}}/api/v1/devices/heartbeat
+Authorization: Bearer {{DeviceToken}}
+Content-Type: application/json
+
+{
+  "deviceId": "PC-001",
+  "localIp": "192.168.1.100",
+  "uptimeSeconds": 3600
+}
+
+###
+
+### [3] Submit activity report
+POST {{WorkTrack.Api_HostAddress}}/api/v1/reports
+Authorization: Bearer {{DeviceToken}}
+Content-Type: application/json
+
+{
+  "deviceId": "PC-001",
+  "clientUuid": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-08-21T10:00:00+07:00",
+  "activeApp": "chrome.exe",
+  "idleSeconds": 0,
+  "uptimeSeconds": 3600
+}
+
+###
+
+### [4] Lihat screenshots device per tanggal
+GET {{WorkTrack.Api_HostAddress}}/api/v1/devices/PC-001/screenshots?date=2026-08-21
+Authorization: Bearer {{DeviceToken}}
+
+###
