@@ -103,6 +103,25 @@ public static class ScreenshotEndpoints
             "Screenshot saved: device={DeviceId} monitor={Monitor} size={Kb}KB id={Id}",
             deviceId, monitorIndex, file.Length / 1024, screenshot.Id);
 
+        // Hanya simpan 1 screenshot terbaru per device+monitor — hapus yang lama
+        // (DB + file) supaya storage tidak menumpuk seiring waktu.
+        var old = await db.Screenshots
+            .Where(s => s.DeviceId == deviceId && s.MonitorIndex == monitorIndex && s.Id != screenshot.Id)
+            .ToListAsync();
+
+        if (old.Count > 0)
+        {
+            foreach (var o in old)
+                await store.DeleteAsync(o.StoragePath);
+
+            db.Screenshots.RemoveRange(old);
+            await db.SaveChangesAsync();
+
+            logger.LogInformation(
+                "Old screenshots pruned: device={DeviceId} monitor={Monitor} removed={Count}",
+                deviceId, monitorIndex, old.Count);
+        }
+
         return Results.Created($"/api/v1/screenshots/file/{screenshot.Id}", new
         {
             screenshot_id = screenshot.Id,

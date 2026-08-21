@@ -19,19 +19,6 @@ export interface Device {
   lastScreenshot?: { id: number; fileUrl: string; timestamp: string } | null;
 }
 
-export interface TimelineEntry {
-  timestamp: string;
-  activeApp: string | null;
-  idleSeconds: number;
-  uptimeSeconds: number;
-  screenshot: { id: number; fileUrl: string; sizeBytes: number } | null;
-}
-
-export interface TimelineResponse {
-  date: string;
-  timeline: TimelineEntry[];
-}
-
 export interface AppUsage {
   app: string;
   minutes: number;
@@ -63,17 +50,9 @@ export function formatDuration(seconds: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-}
-
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
-}
-
-export function today(): string {
-  return new Date().toISOString().slice(0, 10);
 }

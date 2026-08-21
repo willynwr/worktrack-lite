@@ -1,7 +1,6 @@
 import { api } from '@/lib/server-api';
 import { formatDuration } from '@/lib/api';
 import type { DailyStats } from '@/lib/api';
-import TimelineClient from './TimelineClient';
 import DeviceLiveCard from '../../_components/DeviceLiveCard';
 
 interface Props { params: Promise<{ id: string }> }
@@ -89,11 +88,6 @@ export default async function DeviceDetailPage({ params }: Props) {
 
       {/* Stats */}
       {stats && <div className="section"><StatsPanel stats={stats} /></div>}
-
-      {/* Timeline (interactive client component) */}
-      <div className="card">
-        <TimelineClient deviceId={id} />
-      </div>
     </>
   );
 }
