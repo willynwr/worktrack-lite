@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { ADMIN_COOKIE } from '@/lib/cookie-name';
+
+// Nama cookie di-inline langsung di sini (bukan diimpor dari lib/) — builder Vercel untuk
+// versi Next.js ini menolak Edge Middleware yang mengimpor modul lokal apa pun, walau
+// modulnya sendiri tanpa dependency ("referencing unsupported modules"). Kalau perlu
+// diganti, sinkronkan manual dengan ADMIN_COOKIE di lib/cookie-name.ts / lib/session.ts.
+const ADMIN_COOKIE = 'admin_token';
 
 // Optimistic check saja (baca cookie, tidak validasi signature JWT) — cukup untuk
 // redirect UX; otorisasi sebenarnya tetap divalidasi oleh .NET API di setiap request.
