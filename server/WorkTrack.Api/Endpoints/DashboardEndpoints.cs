@@ -1,8 +1,10 @@
 namespace WorkTrack.Api.Endpoints;
 
+using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
 using WorkTrack.Api.Data;
 using WorkTrack.Api.Services;
+using WorkTrack.Api.Storage;
 
 /// <summary>
 /// Endpoint khusus untuk Web Dashboard (Next.js).
@@ -22,6 +24,7 @@ public static class DashboardEndpoints
         g.MapGet("/devices/{id}/timeline", GetTimeline);
         g.MapGet("/devices/{id}/stats",    GetStats);
         g.MapPatch("/devices/{id}",        PatchDevice);
+        g.MapGet("/devices/{id}/screenshots/download", DownloadScreenshots);
     }
 
     // ── Admin JWT endpoint filter ────────────────────────────────────────────
@@ -302,6 +305,66 @@ public static class DashboardEndpoints
         await auditLog.LogAsync(adminUsername, action, id, httpContext.Connection.RemoteIpAddress?.ToString());
 
         return Results.Ok(new { device.DeviceId, device.IsActive });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/v1/dashboard/devices/{id}/screenshots/download?from=YYYY-MM-DD&to=YYYY-MM-DD
+    // Download kolektif sebagai satu file ZIP.
+    // ─────────────────────────────────────────────────────────────────────────
+    private static async Task<IResult> DownloadScreenshots(
+        string id,
+        string? from,
+        string? to,
+        AppDbContext db,
+        IScreenshotStore store,
+        AuditLogService auditLog,
+        HttpContext httpContext,
+        ILogger<AppDbContext> logger)
+    {
+        var today    = DateOnly.FromDateTime(DateTime.UtcNow);
+        var startDay = DateOnly.TryParse(from, out var f) ? f : today.AddDays(-6);
+        var endDay   = DateOnly.TryParse(to, out var t) ? t : today;
+
+        var start = new DateTimeOffset(startDay.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        var end   = new DateTimeOffset(endDay.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).AddDays(1);
+
+        var screenshots = await db.Screenshots
+            .Where(s => s.DeviceId == id && s.Timestamp >= start && s.Timestamp < end)
+            .OrderBy(s => s.Timestamp)
+            .ToListAsync();
+
+        if (screenshots.Count == 0)
+            return Results.NotFound(new { error = "Tidak ada screenshot pada rentang tanggal ini." });
+
+        byte[] zipBytes;
+        using (var memoryStream = new MemoryStream())
+        {
+            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var s in screenshots)
+                {
+                    var fileStream = await store.GetAsync(s.StoragePath);
+                    if (fileStream is null) continue;
+
+                    var ext   = s.ContentType.Contains("webp") ? "webp" : "jpg";
+                    var entry = archive.CreateEntry($"{s.Timestamp:yyyyMMdd_HHmmss}_{s.Id}.{ext}", CompressionLevel.Fastest);
+
+                    using var entryStream = entry.Open();
+                    using (fileStream)
+                        await fileStream.CopyToAsync(entryStream);
+                }
+            }
+            zipBytes = memoryStream.ToArray();
+        }
+
+        var adminUsername = httpContext.Items["AdminUser"]?.ToString() ?? "unknown";
+        await auditLog.LogAsync(adminUsername, "downloaded_screenshots", $"{id}:{startDay}..{endDay}",
+            httpContext.Connection.RemoteIpAddress?.ToString());
+
+        logger.LogInformation("Screenshots downloaded: device={DeviceId} range={Start}..{End} count={Count}",
+            id, startDay, endDay, screenshots.Count);
+
+        return Results.File(zipBytes, "application/zip", $"{id}_{startDay:yyyyMMdd}_{endDay:yyyyMMdd}.zip");
     }
 }
 
