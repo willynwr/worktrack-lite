@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
+import { ADMIN_COOKIE } from '@/lib/cookie-name';
 
-export const ADMIN_COOKIE = 'admin_token';
+export { ADMIN_COOKIE };
 
 export async function getAdminToken(): Promise<string | null> {
   const store = await cookies();

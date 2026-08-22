@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { ADMIN_COOKIE } from '@/lib/session';
+import { ADMIN_COOKIE } from '@/lib/cookie-name';
 
 // Optimistic check saja (baca cookie, tidak validasi signature JWT) — cukup untuk
 // redirect UX; otorisasi sebenarnya tetap divalidasi oleh .NET API di setiap request.
