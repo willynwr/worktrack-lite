@@ -4,7 +4,12 @@ import { ADMIN_COOKIE } from '@/lib/session';
 
 // Optimistic check saja (baca cookie, tidak validasi signature JWT) — cukup untuk
 // redirect UX; otorisasi sebenarnya tetap divalidasi oleh .NET API di setiap request.
-export function proxy(request: NextRequest) {
+//
+// Nama file/fungsi sengaja pakai konvensi lama `middleware.ts` (bukan `proxy.ts` yang
+// jadi nama baru di Next.js 16) karena saat ditulis, builder Vercel belum mengenali
+// `proxy.ts` — deploy sukses tapi semua route 404 di edge Vercel. `middleware.ts` masih
+// didukung penuh (cuma deprecated), fungsinya identik.
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasToken = request.cookies.has(ADMIN_COOKIE);
 
