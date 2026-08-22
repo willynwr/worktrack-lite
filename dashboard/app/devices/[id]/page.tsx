@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/session';
 import { formatDuration } from '@/lib/api';
 import type { DailyStats } from '@/lib/api';
 import DeviceLiveCard from '../../_components/DeviceLiveCard';
+import DownloadScreenshotsButton from '../../_components/DownloadScreenshotsButton';
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -87,6 +88,12 @@ export default async function DeviceDetailPage({ params }: Props) {
       <a href="/devices" className="back-link">← Semua Devices</a>
 
       <DeviceLiveCard deviceId={id} initialDevice={device} />
+
+      {/* Download screenshot kolektif */}
+      <div className="card section">
+        <div className="card-title">Download Screenshot</div>
+        <DownloadScreenshotsButton deviceId={id} />
+      </div>
 
       {/* Stats */}
       {stats && <div className="section"><StatsPanel stats={stats} /></div>}
