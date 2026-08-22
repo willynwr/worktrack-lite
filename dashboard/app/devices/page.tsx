@@ -1,4 +1,5 @@
 import { api } from '@/lib/server-api';
+import { requireAdmin } from '@/lib/session';
 import type { Device } from '@/lib/api';
 import DevicesClient from '../_components/DevicesClient';
 
@@ -8,6 +9,7 @@ async function getDevices(): Promise<Device[]> {
 }
 
 export default async function DevicesPage() {
+  await requireAdmin();
   const devices = await getDevices();
 
   return (

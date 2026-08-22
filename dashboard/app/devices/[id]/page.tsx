@@ -1,4 +1,5 @@
 import { api } from '@/lib/server-api';
+import { requireAdmin } from '@/lib/session';
 import { formatDuration } from '@/lib/api';
 import type { DailyStats } from '@/lib/api';
 import DeviceLiveCard from '../../_components/DeviceLiveCard';
@@ -68,6 +69,7 @@ function StatsPanel({ stats }: { stats: DailyStats }) {
 }
 
 export default async function DeviceDetailPage({ params }: Props) {
+  await requireAdmin();
   const { id } = await params;
   const { device, stats } = await getData(id);
 
