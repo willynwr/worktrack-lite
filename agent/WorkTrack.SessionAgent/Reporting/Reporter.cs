@@ -11,7 +11,7 @@ using WorkTrack.SessionAgent.Queue;
 using WorkTrack.SessionAgent.Uptime;
 
 /// <summary>
-/// Mengumpulkan data setiap 60 detik, mengirim report + screenshot ke WorkTrack.Api.
+/// Mengumpulkan data setiap 2 menit, mengirim report + screenshot ke WorkTrack.Api.
 /// Bila upload gagal (offline) → masukkan ke LocalQueue → retry saat online kembali.
 ///
 /// Flow per siklus:
@@ -28,7 +28,7 @@ public class Reporter : IAsyncDisposable
     private readonly ILogger<Reporter> _logger;
     private readonly LocalQueue _queue;
 
-    private static readonly TimeSpan ReportInterval = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan ReportInterval = TimeSpan.FromMinutes(2);
 
     public Reporter(string deviceId, ApiClient apiClient, ILogger<Reporter> logger)
     {
